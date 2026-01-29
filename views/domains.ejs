@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+	<title>Domains - Email Service</title>
+	<style>
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+		
+		.app-wrapper { display: flex; height: 100vh; flex-direction: column; }
+		.top-bar { background: #2c3e50; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+		.top-bar-left { font-size: 18px; font-weight: bold; }
+		.top-bar-right { display: flex; gap: 20px; align-items: center; }
+		.user-info { display: flex; gap: 10px; align-items: center; }
+		.btn { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+		.btn:hover { background: #2980b9; }
+		.btn-primary { background: #27ae60; }
+		.btn-primary:hover { background: #229954; }
+
+		.app-main { display: flex; flex: 1; overflow: hidden; }
+		.sidebar { width: 200px; background: #34495e; color: white; overflow-y: auto; padding: 16px 0; border-right: 1px solid #2c3e50; }
+		.sidebar-nav { display: flex; flex-direction: column; }
+		.nav-section { display: flex; flex-direction: column; padding: 8px 0; }
+		.nav-item { padding: 12px 16px; color: #ecf0f1; text-decoration: none; display: block; transition: background 0.2s; }
+		.nav-item:hover { background: #2c3e50; }
+		.nav-item.active { background: #3498db; color: white; font-weight: bold; }
+		.nav-divider { border: none; border-top: 1px solid #2c3e50; margin: 8px 0; }
+
+		.content { flex: 1; overflow-y: auto; padding: 24px; }
+		.content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+		.content-header h1 { margin: 0; color: #2c3e50; }
+
+		.card { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 24px; margin-bottom: 20px; }
+		.card-header { font-size: 18px; font-weight: bold; margin-bottom: 16px; color: #2c3e50; }
+
+		.form-group { margin-bottom: 16px; }
+		.form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #2c3e50; }
+		.form-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+
+		.domain-item { background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+		.domain-info { flex: 1; }
+		.domain-name { font-weight: bold; color: #2c3e50; }
+		.domain-status { font-size: 12px; color: #95a5a6; margin-top: 4px; }
+		.domain-actions { display: flex; gap: 8px; }
+
+		.alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; }
+		.alert-error { background: #e74c3c; color: white; }
+		.alert-success { background: #27ae60; color: white; }
+
+		.empty-state { text-align: center; padding: 40px; color: #95a5a6; }
+		.loader { text-align: center; padding: 20px; color: #95a5a6; }
+
+		.dns-record { background: #f5f5f5; border-left: 3px solid #3498db; padding: 12px; margin: 10px 0; border-radius: 4px; font-family: monospace; font-size: 12px; word-break: break-all; }
+
+		@media (max-width: 768px) {
+			.sidebar { display: none; }
+			.content { width: 100%; padding: 16px; }
+			.domain-item { flex-direction: column; gap: 10px; }
+			.domain-actions { width: 100%; }
+		}
+	</style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="top-bar">
+            <div class="top-bar-left">@ Email Service</div>
+            <div class="top-bar-right">
+                <div class="user-info">
+                    <span id="userEmail"></span>
+                    <button id="logoutBtn" class="btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-main">
+            <div class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <a href="/app/inbox" class="nav-item">[*] Inbox</a>
+                        <a href="/app/sent" class="nav-item">[>] Sent</a>
+                        <a href="/app/drafts" class="nav-item">[#] Drafts</a>
+                        <a href="/app/compose" class="nav-item">[+] Compose</a>
+                    </div>
+                    <div class="nav-divider"></div>
+                    <div class="nav-section">
+                        <a href="/app/mailboxes" class="nav-item">[~] Mailboxes</a>
+                        <a href="/app/domains" class="nav-item active">[D] Domains</a>
+                        <a href="/app/forwarding" class="nav-item">[F] Forwarding</a>
+                        <a href="/app/account" class="nav-item">[!] Account</a>
+                        <a href="/app/settings" class="nav-item">[*] Settings</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1>My Domains</h1>
+                    <button id="addDomainBtn" class="btn btn-primary">+ Add Domain</button>
+                <div class="content">
+                <div class="content-header">
+                    <h1>My Domains</h1>
+                    <button id="addDomainBtn" class="btn btn-primary">+ Add Domain</button>
+                </div>
+
+                <div id="alertContainer"></div>
+
+                <!-- Add Domain Section -->
+                <div class="card">
+                    <div class="card-header">Add a Domain</div>
+                    <div class="form-group">
+                        <label for="domainInput">Domain Name:</label>
+                        <input type="text" id="domainInput" class="form-input" placeholder="example.com" required>
+                    </div>
+                    <button id="confirmAddDomain" class="btn btn-primary">Add Domain</button>
+                </div>
+
+                <!-- Domains List -->
+                <div class="card">
+                    <div class="card-header">Your Domains</div>
+                    <div id="domainsList"></div>
+                    <div id="emptyState" class="empty-state" style="display:none;">No domains yet. Add your first domain above!</div>
+                    <div id="loader" class="loader">Loading domains...</div>
+                </div>
+
+                <!-- DNS Configuration Help -->
+                <div class="card">
+                    <div class="card-header">DNS Configuration Guide</div>
+                    <div style="color: #34495e; line-height: 1.6;">
+                        <p>After adding your domain, configure these DNS records at your domain registrar:</p>
+                        
+                        <h3 style="margin: 16px 0 8px 0; color: #2c3e50;">1. MX Record (Required)</h3>
+                        <div class="dns-record">Type: MX | Name: @ | Priority: 10 | Value: <%= MAIL_SERVER_HOST || 'mail.example.com' %></div>
+
+                        <h3 style="margin: 16px 0 8px 0; color: #2c3e50;">2. SPF Record (Recommended)</h3>
+                        <div class="dns-record">Type: TXT | Name: @ | Value: <%= SPF_RECORD || 'v=spf1 -all' %></div>
+
+                        <h3 style="margin: 16px 0 8px 0; color: #2c3e50;">3. DKIM Record (Recommended)</h3>
+                        <div class="dns-record">Type: TXT | Name: <%= DKIM_SELECTOR || 'default' %>._domainkey | Value: v=DKIM1; k=rsa; p=YOUR_PUBLIC_KEY</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = '<%= SUPABASE_URL %>';
+        const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        function showAlert(msg, type = 'error') {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+            if (type === 'success') {
+                setTimeout(() => { alertDiv.innerHTML = ''; }, 3000);
+            }
+        }
+
+        async function loadDomains() {
+            try {
+                if (!currentUser) return;
+
+                const response = await fetch(`/api/domains/${currentUser.id}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load domains');
+                }
+
+                const domains = data || [];
+                const container = document.getElementById('domainsList');
+                const loader = document.getElementById('loader');
+                const emptyState = document.getElementById('emptyState');
+
+                loader.style.display = 'none';
+
+                if (domains.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                container.innerHTML = domains.map(domain => `
+                    <div class="domain-item">
+                        <div class="domain-info">
+                            <div class="domain-name">${domain.domain}</div>
+                            <div class="domain-status">Added ${new Date(domain.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div class="domain-actions">
+                            <button class="btn" onclick="verifyDomain('${domain.domain}')">Verify DNS</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading domains:', err);
+                document.getElementById('loader').style.display = 'none';
+                showAlert(err.message || 'Failed to load domains', 'error');
+            }
+        }
+
+        async function addDomain() {
+            try {
+                const domain = document.getElementById('domainInput').value.trim();
+                if (!domain) {
+                    showAlert('Please enter a domain', 'error');
+                    return;
+                }
+
+                const response = await fetch('/api/domains', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id, domain })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to add domain');
+                }
+
+                showAlert('Domain added successfully!', 'success');
+                document.getElementById('domainInput').value = '';
+                await loadDomains();
+            } catch (err) {
+                console.error('Error adding domain:', err);
+                showAlert(err.message || 'Failed to add domain', 'error');
+            }
+        }
+
+        async function verifyDomain(domain) {
+            try {
+                const response = await fetch('/api/dns/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'DNS check failed');
+                }
+
+                let msg = `DNS Records for ${domain}:\\n`;
+                if (data.mx) msg += `✓ MX Records found\\n`;
+                else msg += `✗ No MX Records\\n`;
+                if (data.spf) msg += `✓ SPF Record found\\n`;
+                else msg += `✗ No SPF Record\\n`;
+
+                alert(msg);
+            } catch (err) {
+                alert('DNS verification failed: ' + err.message);
+            }
+        }
+
+        async function init() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.getAttribute('href') === '/app/domains') {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+
+                await loadDomains();
+            } catch (err) {
+                console.error('Init error:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        document.getElementById('addDomainBtn').addEventListener('click', () => {
+            document.getElementById('domainInput').focus();
+        });
+
+        document.getElementById('confirmAddDomain').addEventListener('click', addDomain);
+        document.getElementById('domainInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addDomain();
+        });
+
+        init();
+    </script>
+</body>
+</html>

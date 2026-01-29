@@ -1,0 +1,109 @@
+<%- include('layout', { title: 'Sign In' , body: `
+<div class="auth-screen">
+	<div class="auth-container">
+		<div class="auth-header">
+			<h1>📧 Email Service</h1>
+			<p>Professional Email Hosting</p>
+		</div>
+
+		<div id="authAlert"></div>
+
+		<div id="loginForm">
+			<h2 style="text-align: center; margin-bottom: 20px;">Sign In</h2>
+			<div class="form-group">
+				<label for="loginEmail">Email</label>
+				<input type="email" id="loginEmail" placeholder="you@example.com" class="form-input">
+			</div>
+			<div class="form-group">
+				<label for="loginPassword">Password</label>
+				<input type="password" id="loginPassword" placeholder="••••••••" class="form-input">
+			</div>
+			<button class="btn btn-primary" id="loginBtn">Sign In</button>
+			<div class="auth-toggle" style="text-align: center; margin-top: 15px;">
+				Don't have an account? <button id="showSignup" class="link" style="background: none; border: none; color: #3182ce; cursor: pointer; text-decoration: underline;">Create one</button>
+			</div>
+		</div>
+
+		<div id="signupForm" style="display:none;">
+			<h2 style="text-align: center; margin-bottom: 20px;">Create Account</h2>
+			<div class="form-group">
+				<label for="signupEmail">Email</label>
+				<input type="email" id="signupEmail" placeholder="you@example.com" class="form-input">
+			</div>
+			<div class="form-group">
+				<label for="signupPassword">Password</label>
+				<input type="password" id="signupPassword" placeholder="••••••••" class="form-input">
+				<small>At least 8 characters recommended</small>
+			</div>
+			<div class="form-group">
+				<label for="signupPasswordConfirm">Confirm Password</label>
+				<input type="password" id="signupPasswordConfirm" placeholder="••••••••" class="form-input">
+			</div>
+			<button class="btn btn-primary" id="signupBtn">Create Account</button>
+			<div class="auth-toggle" style="text-align: center; margin-top: 15px;">
+				Already have an account? <button id="showLogin" class="link" style="background: none; border: none; color: #3182ce; cursor: pointer; text-decoration: underline;">Sign in</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+	const SUPABASE_URL = '<%= SUPABASE_URL %>';
+	const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+	const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+	function showSignup() { 
+		document.getElementById('loginForm').style.display='none'; 
+		document.getElementById('signupForm').style.display='block'; 
+	}
+	
+	function showLogin() { 
+		document.getElementById('signupForm').style.display='none'; 
+		document.getElementById('loginForm').style.display='block'; 
+	}
+
+	document.getElementById('showSignup').addEventListener('click', showSignup);
+	document.getElementById('showLogin').addEventListener('click', showLogin);
+
+	document.getElementById('loginBtn').addEventListener('click', async () => {
+		const email = document.getElementById('loginEmail').value;
+		const password = document.getElementById('loginPassword').value;
+		
+		if (!email || !password) {
+			alert('Email and password required');
+			return;
+		}
+		
+		const { data, error } = await supabase.auth.signInWithPassword({email, password});
+		if (error) return alert(error.message || 'Login failed');
+		window.location.href = '/dashboard';
+	});
+
+	document.getElementById('signupBtn').addEventListener('click', async () => {
+		const email = document.getElementById('signupEmail').value;
+		const password = document.getElementById('signupPassword').value;
+		const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+		
+		if (!email || !password || !passwordConfirm) {
+			alert('All fields required');
+			return;
+		}
+		
+		if (password !== passwordConfirm) {
+			alert('Passwords do not match');
+			return;
+		}
+		
+		if (password.length < 8) {
+			alert('Password must be at least 8 characters');
+			return;
+		}
+		
+		const { data, error } = await supabase.auth.signUp({email, password});
+		if (error) return alert(error.message || 'Signup failed');
+		alert('Account created successfully! You can now sign in.');
+		showLogin();
+	});
+</script>
+` }) %>

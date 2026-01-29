@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+	<title>Sent - Email Service</title>
+	<style>
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+		
+		.app-wrapper { display: flex; height: 100vh; flex-direction: column; }
+		.top-bar { background: #2c3e50; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+		.top-bar-left { font-size: 18px; font-weight: bold; }
+		.top-bar-right { display: flex; gap: 20px; align-items: center; }
+		.user-info { display: flex; gap: 10px; align-items: center; }
+		.btn { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+		.btn:hover { background: #2980b9; }
+		.btn-primary { background: #27ae60; }
+		.btn-primary:hover { background: #229954; }
+
+		.app-main { display: flex; flex: 1; overflow: hidden; }
+		.sidebar { width: 200px; background: #34495e; color: white; overflow-y: auto; padding: 16px 0; border-right: 1px solid #2c3e50; }
+		.sidebar-nav { display: flex; flex-direction: column; }
+		.nav-section { display: flex; flex-direction: column; padding: 8px 0; }
+		.nav-item { padding: 12px 16px; color: #ecf0f1; text-decoration: none; display: block; transition: background 0.2s; }
+		.nav-item:hover { background: #2c3e50; }
+		.nav-item.active { background: #3498db; color: white; font-weight: bold; }
+		.nav-divider { border: none; border-top: 1px solid #2c3e50; margin: 8px 0; }
+
+		.content { flex: 1; overflow-y: auto; padding: 24px; }
+		.content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+		.content-header h1 { margin: 0; color: #2c3e50; }
+		.content-actions { display: flex; gap: 10px; }
+		.form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+
+		.email-list { display: flex; flex-direction: column; gap: 12px; }
+		.email-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 16px; display: flex; justify-content: space-between; align-items: center; transition: box-shadow 0.2s; }
+		.email-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+		
+		.email-to { font-weight: bold; color: #2c3e50; }
+		.email-subject { color: #34495e; margin-top: 4px; }
+		.email-date { color: #95a5a6; font-size: 12px; margin-top: 4px; }
+		.email-info { flex: 1; }
+		.email-actions { display: flex; gap: 8px; }
+
+		.empty-state { text-align: center; padding: 40px; color: #95a5a6; }
+		.loader { text-align: center; padding: 20px; color: #95a5a6; }
+
+		@media (max-width: 768px) {
+			.sidebar { display: none; }
+			.content { width: 100%; padding: 16px; }
+			.email-item { flex-direction: column; gap: 10px; }
+			.content-actions { flex-direction: column; }
+			.form-input { width: 100%; }
+		}
+	</style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="top-bar">
+            <div class="top-bar-left">@ Email Service</div>
+            <div class="top-bar-right">
+                <div class="user-info">
+                    <span id="userEmail"></span>
+                    <button id="logoutBtn" class="btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-main">
+            <div class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <a href="/app/inbox" class="nav-item">[*] Inbox</a>
+                        <a href="/app/sent" class="nav-item active">[>] Sent</a>
+                        <a href="/app/drafts" class="nav-item">[#] Drafts</a>
+                        <a href="/app/compose" class="nav-item">[+] Compose</a>
+                    </div>
+                    <div class="nav-divider"></div>
+                    <div class="nav-section">
+                        <a href="/app/mailboxes" class="nav-item">[~] Mailboxes</a>
+                        <a href="/app/domains" class="nav-item">[D] Domains</a>
+                        <a href="/app/forwarding" class="nav-item">[F] Forwarding</a>
+                        <a href="/app/account" class="nav-item">[!] Account</a>
+                        <a href="/app/settings" class="nav-item">[*] Settings</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1>Sent Emails</h1>
+                    <div class="content-actions">
+                        <input type="text" id="searchBox" placeholder="Search..." class="form-input" style="width:250px">
+                        <a href="/app/compose" class="btn btn-primary">Compose</a>
+                    </div>
+                </div>
+
+                <div class="email-list">
+                    <div id="emailContainer"></div>
+                    <div id="emptyState" class="empty-state" style="display:none;">
+                        <p>No sent emails yet</p>
+                        <a href="/app/compose" class="btn btn-primary" style="display:inline-block;margin-top:10px;">Send your first email</a>
+                    </div>
+                    <div id="loader" class="loader">Loading emails...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = '<%= SUPABASE_URL %>';
+        const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        async function loadEmails() {
+            try {
+                if (!currentUser) return;
+
+                const response = await fetch(`/api/emails/${currentUser.id}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load emails');
+                }
+
+                const emails = (data.emails || []).filter(e => e.direction === 'sent');
+                const container = document.getElementById('emailContainer');
+                const emptyState = document.getElementById('emptyState');
+                const loader = document.getElementById('loader');
+
+                loader.style.display = 'none';
+
+                if (emails.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                container.innerHTML = emails.map(email => `
+                    <div class="email-item">
+                        <div class="email-info">
+                            <div class="email-to">To: ${escapeHtml(email.to_address || 'Unknown')}</div>
+                            <div class="email-subject">${escapeHtml(email.subject || '(no subject)')}</div>
+                            <div class="email-date">${new Date(email.created_at).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading emails:', err);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('emailContainer').innerHTML = '';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        async function init() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.getAttribute('href') === '/app/sent') {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+
+                await loadEmails();
+            } catch (err) {
+                console.error('Init error:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        document.getElementById('searchBox').addEventListener('keyup', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.email-item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+
+        init();
+    </script>
+</body>
+</html>
+        <div class="top-bar">
+            <div class="top-bar-left">@ Email Service</div>
+            <div class="top-bar-right">
+                <div class="user-info">
+                    <span id="userEmail"></span>
+                    <button id="logoutBtn" class="btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-main">
+            <div class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <a href="/app/inbox" class="nav-item">[*] Inbox</a>
+                        <a href="/app/sent" class="nav-item active">[>] Sent</a>
+                        <a href="/app/drafts" class="nav-item">[#] Drafts</a>
+                        <a href="/app/compose" class="nav-item">[+] Compose</a>
+                    </div>
+                    <div class="nav-divider"></div>
+                    <div class="nav-section">
+                        <a href="/app/mailboxes" class="nav-item">[~] Mailboxes</a>
+                        <a href="/app/domains" class="nav-item">[D] Domains</a>
+                        <a href="/app/forwarding" class="nav-item">[F] Forwarding</a>
+                        <a href="/app/account" class="nav-item">[!] Account</a>
+                        <a href="/app/settings" class="nav-item">[*] Settings</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1>Sent Emails</h1>
+                </div>
+
+                <div class="email-list">
+                    <div id="sentContainer"></div>
+                    <div id="emptyState" class="empty-state" style="display:none;">📭 No sent emails</div>
+                    <div id="loader" class="loader">Loading emails...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = '<%= SUPABASE_URL %>';
+        const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        async function loadSentEmails() {
+            try {
+                if (!currentUser) return;
+
+                const response = await fetch(`/api/emails/${currentUser.id}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load emails');
+                }
+
+                const emails = (data.emails || []).filter(e => e.direction === 'sent');
+                const container = document.getElementById('sentContainer');
+                const emptyState = document.getElementById('emptyState');
+                const loader = document.getElementById('loader');
+
+                loader.style.display = 'none';
+
+                if (emails.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                container.innerHTML = emails.map(email => `
+                    <div class="email-item">
+                        <div class="email-info">
+                            <div class="email-from">To: ${escapeHtml(email.to_address || 'Unknown')}</div>
+                            <div class="email-subject">${escapeHtml(email.subject || '(no subject)')}</div>
+                            <div class="email-date">${new Date(email.created_at).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading emails:', err);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        async function init() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.getAttribute('href') === '/app/sent') {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+
+                await loadSentEmails();
+            } catch (err) {
+                console.error('Init error:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        init();
+    </script>
+</body>
+</html>

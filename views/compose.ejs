@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+	<title>Compose - Email Service</title>
+	<link rel="stylesheet" href="/styles.css">
+	<style>
+		* { box-sizing: border-box; }
+		html, body { margin: 0; padding: 0; }
+		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+		
+		.app-wrapper {
+			display: flex;
+			height: 100vh;
+			flex-direction: column;
+		}
+
+		.top-bar {
+			background: #2c3e50;
+			color: white;
+			padding: 16px 24px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		.top-bar-left { font-size: 18px; font-weight: bold; }
+		.top-bar-right { display: flex; gap: 20px; align-items: center; }
+		.user-info { display: flex; gap: 10px; align-items: center; }
+		.btn { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+		.btn:hover { background: #2980b9; }
+		.btn-primary { background: #27ae60; }
+		.btn-primary:hover { background: #229954; }
+
+		.app-main {
+			display: flex;
+			flex: 1;
+			overflow: hidden;
+		}
+
+		.sidebar {
+			width: 200px;
+			background: #34495e;
+			color: white;
+			overflow-y: auto;
+			padding: 16px 0;
+			border-right: 1px solid #2c3e50;
+		}
+
+		.sidebar-nav { display: flex; flex-direction: column; }
+		.nav-section { display: flex; flex-direction: column; padding: 8px 0; }
+		.nav-item {
+			padding: 12px 16px;
+			color: #ecf0f1;
+			text-decoration: none;
+			display: block;
+			transition: background 0.2s;
+		}
+		.nav-item:hover { background: #2c3e50; }
+		.nav-item.active { background: #3498db; color: white; font-weight: bold; }
+		.nav-divider { border: none; border-top: 1px solid #2c3e50; margin: 8px 0; }
+
+		.content {
+			flex: 1;
+			overflow-y: auto;
+			padding: 24px;
+		}
+
+		.content-header h1 { margin: 0 0 24px 0; color: #2c3e50; }
+
+		.form-group {
+			margin-bottom: 16px;
+		}
+
+		.form-group label {
+			display: block;
+			margin-bottom: 6px;
+			font-weight: 600;
+			color: #2c3e50;
+		}
+
+		.form-input, textarea {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			font-size: 14px;
+			font-family: inherit;
+		}
+
+		textarea {
+			min-height: 300px;
+			resize: vertical;
+		}
+
+		.form-actions {
+			display: flex;
+			gap: 10px;
+			margin-top: 20px;
+		}
+
+		.alert {
+			padding: 12px 16px;
+			border-radius: 4px;
+			margin-bottom: 16px;
+		}
+
+		.alert-error { background: #e74c3c; color: white; }
+		.alert-success { background: #27ae60; color: white; }
+
+		.compose-card {
+			background: white;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			padding: 24px;
+			max-width: 600px;
+		}
+
+		@media (max-width: 768px) {
+			.sidebar { display: none; }
+			.content { width: 100%; padding: 16px; }
+			.compose-card { max-width: 100%; }
+		}
+	</style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="top-bar">
+            <div class="top-bar-left">@ Email Service</div>
+            <div class="top-bar-right">
+                <div class="user-info">
+                    <span id="userEmail"></span>
+                    <button id="logoutBtn" class="btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-main">
+            <div class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <a href="/app/inbox" class="nav-item">[*] Inbox</a>
+                        <a href="/app/sent" class="nav-item">[>] Sent</a>
+                        <a href="/app/drafts" class="nav-item">[#] Drafts</a>
+                        <a href="/app/compose" class="nav-item active">[+] Compose</a>
+                    </div>
+                    <div class="nav-divider"></div>
+                    <div class="nav-section">
+                        <a href="/app/mailboxes" class="nav-item">[~] Mailboxes</a>
+                        <a href="/app/domains" class="nav-item">[D] Domains</a>
+                        <a href="/app/forwarding" class="nav-item">[F] Forwarding</a>
+                        <a href="/app/account" class="nav-item">[!] Account</a>
+                        <a href="/app/settings" class="nav-item">[*] Settings</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1>Compose Email</h1>
+                </div>
+
+                <div class="compose-card">
+                    <div id="alertContainer"></div>
+
+                    <div class="form-group">
+                        <label for="recipientEmail">To:</label>
+                        <input type="email" id="recipientEmail" class="form-input" placeholder="recipient@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emailSubject">Subject:</label>
+                        <input type="text" id="emailSubject" class="form-input" placeholder="Email subject">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emailBody">Message:</label>
+                        <textarea id="emailBody" placeholder="Write your message here..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="sendBtn" class="btn btn-primary">Send</button>
+                        <button id="draftBtn" class="btn">Save as Draft</button>
+                        <a href="/app/inbox" class="btn" style="text-decoration:none;display:inline-flex;align-items:center;">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = '<%= SUPABASE_URL %>';
+        const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        function showAlert(msg, type = 'error') {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+            if (type === 'success') {
+                setTimeout(() => { alertDiv.innerHTML = ''; }, 3000);
+            }
+        }
+
+        async function sendEmail() {
+            try {
+                const to = document.getElementById('recipientEmail').value.trim();
+                const subject = document.getElementById('emailSubject').value.trim();
+                const body = document.getElementById('emailBody').value.trim();
+
+                if (!to || !subject || !body) {
+                    showAlert('All fields are required', 'error');
+                    return;
+                }
+
+                if (!to.includes('@')) {
+                    showAlert('Please enter a valid email address', 'error');
+                    return;
+                }
+
+                const token = localStorage.getItem('accessToken');
+                const response = await fetch('/api/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token || ''
+                    },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        to,
+                        subject,
+                        body
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to send email');
+                }
+
+                showAlert('Email sent successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/app/inbox';
+                }, 2000);
+            } catch (err) {
+                console.error('Send error:', err);
+                showAlert(err.message || 'Failed to send email', 'error');
+            }
+        }
+
+        async function saveDraft() {
+            try {
+                const to = document.getElementById('recipientEmail').value.trim();
+                const subject = document.getElementById('emailSubject').value.trim();
+                const body = document.getElementById('emailBody').value.trim();
+
+                if (!to && !subject && !body) {
+                    showAlert('Nothing to save', 'error');
+                    return;
+                }
+
+                const response = await fetch(`/api/drafts/${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to, subject, body })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to save draft');
+                }
+
+                showAlert('Draft saved successfully!', 'success');
+                setTimeout(() => {
+                    document.getElementById('recipientEmail').value = '';
+                    document.getElementById('emailSubject').value = '';
+                    document.getElementById('emailBody').value = '';
+                }, 1500);
+            } catch (err) {
+                console.error('Draft error:', err);
+                showAlert(err.message || 'Failed to save draft', 'error');
+            }
+        }
+
+        async function init() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.getAttribute('href') === '/app/compose') {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            } catch (err) {
+                console.error('Init error:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        document.getElementById('sendBtn').addEventListener('click', sendEmail);
+        document.getElementById('draftBtn').addEventListener('click', saveDraft);
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+	<title>Mailboxes - Email Service</title>
+	<style>
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+		
+		.app-wrapper { display: flex; height: 100vh; flex-direction: column; }
+		.top-bar { background: #2c3e50; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+		.top-bar-left { font-size: 18px; font-weight: bold; }
+		.top-bar-right { display: flex; gap: 20px; align-items: center; }
+		.user-info { display: flex; gap: 10px; align-items: center; }
+		.btn { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+		.btn:hover { background: #2980b9; }
+
+		.app-main { display: flex; flex: 1; overflow: hidden; }
+		.sidebar { width: 200px; background: #34495e; color: white; overflow-y: auto; padding: 16px 0; border-right: 1px solid #2c3e50; }
+		.sidebar-nav { display: flex; flex-direction: column; }
+		.nav-section { display: flex; flex-direction: column; padding: 8px 0; }
+		.nav-item { padding: 12px 16px; color: #ecf0f1; text-decoration: none; display: block; transition: background 0.2s; }
+		.nav-item:hover { background: #2c3e50; }
+		.nav-item.active { background: #3498db; color: white; font-weight: bold; }
+		.nav-divider { border: none; border-top: 1px solid #2c3e50; margin: 8px 0; }
+
+		.content { flex: 1; overflow-y: auto; padding: 24px; }
+		.content-header h1 { margin: 0 0 24px 0; color: #2c3e50; }
+		.card { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 24px; }
+		.card p { color: #34495e; line-height: 1.6; }
+
+		@media (max-width: 768px) {
+			.sidebar { display: none; }
+			.content { width: 100%; padding: 16px; }
+		}
+	</style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="top-bar">
+            <div class="top-bar-left">@ Email Service</div>
+            <div class="top-bar-right">
+                <div class="user-info">
+                    <span id="userEmail"></span>
+                    <button id="logoutBtn" class="btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-main">
+            <div class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <a href="/app/inbox" class="nav-item">[*] Inbox</a>
+                        <a href="/app/sent" class="nav-item">[>] Sent</a>
+                        <a href="/app/drafts" class="nav-item">[#] Drafts</a>
+                        <a href="/app/compose" class="nav-item">[+] Compose</a>
+                    </div>
+                    <div class="nav-divider"></div>
+                    <div class="nav-section">
+                        <a href="/app/mailboxes" class="nav-item active">[~] Mailboxes</a>
+                        <a href="/app/domains" class="nav-item">[D] Domains</a>
+                        <a href="/app/forwarding" class="nav-item">[F] Forwarding</a>
+                        <a href="/app/account" class="nav-item">[!] Account</a>
+                        <a href="/app/settings" class="nav-item">[*] Settings</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1>Mailboxes</h1>
+                </div>
+
+                <div class="card">
+                    <p>Mailbox management feature coming soon. You will be able to create and manage multiple mailboxes for different purposes here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = '<%= SUPABASE_URL %>';
+        const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return window.location.href = '/login';
+            document.getElementById('userEmail').textContent = user.email;
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        init();
+    </script>
+</body>
+</html>
+                </nav>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1>Mailboxes</h1>
+                    <button class="btn btn-primary" id="addMailboxBtn">+ Add Mailbox</button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="mailboxes">Mailboxes & Users</button>
+                    <button class="tab-button" data-tab="details">Details</button>
+                    <button class="tab-button" data-tab="security">Security</button>
+                </div>
+
+                <!-- Mailboxes Tab -->
+                <div class="tab-content active" id="mailboxes">
+                    <div class="card">
+                        <div class="card-header">Email Accounts</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Storage</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mailboxesList">
+                                <tr><td colspan="6" style="text-align: center; color: #a0aec0;">Loading mailboxes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Details Tab -->
+                <div class="tab-content" id="details">
+                    <div class="card">
+                        <div class="card-header">Mailbox Details</div>
+                        <div class="form-stack">
+                            <div class="info-group">
+                                <label>Total Mailboxes</label>
+                                <div class="info-value"><span id="totalMailboxes">0</span> / 10</div>
+                            </div>
+                            <div class="info-group">
+                                <label>Storage Used</label>
+                                <div class="info-value"><span id="storageUsed">0</span> MB / 5 GB (<span id="storagePercent">0</span>%)</div>
+                                <div class="progress-bar">
+                                    <div id="storageBar" class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="info-group">
+                                <label>Quota per Mailbox</label>
+                                <div class="info-value">512 MB</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div class="tab-content" id="security">
+                    <div class="card">
+                        <div class="card-header">Security Settings</div>
+                        <div class="form-stack">
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" checked> Require strong passwords
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" checked> Password expiration: 90 days
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox"> Enable 2FA for all users
+                                </label>
+                            </div>
+                            <button class="btn btn-primary">Update Security</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = '<%= SUPABASE_URL %>';
+        const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let mailboxes = [];
+
+        async function loadMailboxes() {
+            try {
+                const response = await fetch('/api/mailboxes');
+                if (response.ok) {
+                    mailboxes = await response.json();
+                    renderMailboxes();
+                    updateStats();
+                }
+            } catch (err) {
+                console.error('Failed to load mailboxes:', err);
+                document.getElementById('mailboxesList').innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">Failed to load mailboxes</td></tr>';
+            }
+        }
+
+        function renderMailboxes() {
+            const tbody = document.getElementById('mailboxesList');
+            if (mailboxes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #a0aec0;">No mailboxes configured</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = mailboxes.map(mb => `
+                <tr>
+                    <td>${escapeHtml(mb.email)}</td>
+                    <td>${escapeHtml(mb.name || 'N/A')}</td>
+                    <td><span class="badge badge-success">${mb.status === 'active' ? 'Active' : 'Inactive'}</span></td>
+                    <td>${new Date(mb.created).toLocaleDateString()}</td>
+                    <td><small>${mb.used} MB / ${mb.quota} MB</small></td>
+                    <td><button class="btn btn-sm" onclick="editMailbox(${mb.id})">Edit</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            const totalUsed = mailboxes.reduce((sum, mb) => sum + (mb.used || 0), 0);
+            const totalQuota = 5120; // 5 GB in MB
+            const percent = Math.round((totalUsed / totalQuota) * 100);
+
+            document.getElementById('totalMailboxes').textContent = mailboxes.length;
+            document.getElementById('storageUsed').textContent = totalUsed;
+            document.getElementById('storagePercent').textContent = percent;
+            document.getElementById('storageBar').style.width = percent + '%';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function editMailbox(id) {
+            alert('Edit mailbox functionality coming soon');
+        }
+
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return window.location.href = '/login';
+            document.getElementById('userEmail').textContent = user.email;
+            loadMailboxes();
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        document.getElementById('addMailboxBtn').addEventListener('click', () => {
+            alert('Add mailbox form not yet implemented');
+        });
+
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById(e.target.dataset.tab).classList.add('active');
+            });
+        });
+
+        init();
+    </script>
+</body>
+</html>

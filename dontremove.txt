@@ -1,0 +1,1 @@
+make sure all of the ejs files are real and have real stuff and tabs in them fro easier navigation and stuff and make it also mobile friendly and stuff

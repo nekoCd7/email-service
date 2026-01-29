@@ -1,0 +1,29 @@
+{
+  "name": "email-service",
+  "version": "1.0.0",
+  "description": "Free email service like Migadu - SMTP, mailbox, web interface",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["email", "smtp", "mailbox", "imap"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ejs": "^3.1.8",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "smtp-server": "^3.13.1",
+    "nodemailer": "^6.9.7",
+    "mailparser": "^3.6.6",
+    "uuid": "^9.0.1",
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

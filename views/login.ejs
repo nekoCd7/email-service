@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+	<title>Sign In - Email Service</title>
+	<link rel="stylesheet" href="/styles.css">
+	<style>
+		* { box-sizing: border-box; }
+		html, body { margin: 0; padding: 0; }
+		@media (max-width: 768px) {
+			.auth-container { flex-direction: column; }
+			.auth-left { display: none; }
+			.auth-right { width: 100%; padding: 20px; }
+		}
+	</style>
+</head>
+<body class="auth-page">
+	<div class="auth-container">
+		<div class="auth-left">
+			<div class="auth-header">
+				<div class="auth-logo">📧</div>
+				<h1>Email Service</h1>
+				<p class="auth-subtitle">Professional email hosting</p>
+			</div>
+			<div class="auth-features">
+				<div class="feature"><strong>✓</strong> Unlimited domains</div>
+				<div class="feature"><strong>✓</strong> SMTP/IMAP/POP3</div>
+				<div class="feature"><strong>✓</strong> DNS management</div>
+				<div class="feature"><strong>✓</strong> Email forwarding</div>
+				<div class="feature"><strong>✓</strong> Spam filtering</div>
+			</div>
+		</div>
+
+		<div class="auth-right">
+			<div class="auth-form-wrapper">
+				<div id="authAlert" class="alert" style="display:none"></div>
+				
+				<div class="form-section">
+					<h2>Sign In</h2>
+					<div class="form-group">
+						<label for="loginEmail">Email Address</label>
+						<input type="email" id="loginEmail" placeholder="you@example.com" class="form-input">
+					</div>
+					<div class="form-group">
+						<label for="loginPassword">Password</label>
+						<input type="password" id="loginPassword" placeholder="••••••••" class="form-input">
+					</div>
+					<button id="loginBtn" class="btn btn-primary">Sign In</button>
+				</div>
+
+				<div class="auth-toggle">
+					Don't have an account? <a href="/signup" class="link">Create one</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+        function showAlert(msg, type='error') {
+            const el = document.getElementById('authAlert');
+            el.textContent = msg;
+            el.className = 'alert alert-' + type;
+            el.style.display = 'block';
+            console.log(`[ALERT ${type}]:`, msg);
+        }
+
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showAlert('Email and password are required', 'error');
+                return;
+            }
+
+            try {
+                console.log('[LOGIN] Sending request for:', email);
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                console.log('[LOGIN] Response:', response.status, data);
+                
+                if (!response.ok) {
+                    const errorMsg = data.details || data.error || 'Login failed';
+                    throw new Error(errorMsg);
+                }
+                
+                // Store session token
+                if (data.session && data.session.access_token) {
+                    localStorage.setItem('accessToken', data.session.access_token);
+                    console.log('[LOGIN] Token stored');
+                }
+                
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/app/inbox';
+                }, 500);
+            } catch (e) {
+                console.error('[LOGIN] Error:', e);
+                showAlert(e.message || 'Login failed. Please try again.', 'error');
+            }
+        });
+
+        // Allow Enter key
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+    </script>
+</body>
+</html>

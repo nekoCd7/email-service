@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+	<title>Create Account - Email Service</title>
+	<link rel="stylesheet" href="/styles.css">
+	<style>
+		* { box-sizing: border-box; }
+		html, body { margin: 0; padding: 0; }
+		@media (max-width: 768px) {
+			.auth-container { flex-direction: column; }
+			.auth-left { display: none; }
+			.auth-right { width: 100%; padding: 20px; }
+		}
+	</style>
+</head>
+<body class="auth-page">
+	<div class="auth-container">
+		<div class="auth-left">
+			<div class="auth-header">
+				<div class="auth-logo">📧</div>
+				<h1>Email Service</h1>
+				<p class="auth-subtitle">Get started in minutes</p>
+			</div>
+			<div class="auth-features">
+				<div class="feature"><strong>✓</strong> Free to get started</div>
+				<div class="feature"><strong>✓</strong> No email verification needed</div>
+				<div class="feature"><strong>✓</strong> Professional hosting</div>
+				<div class="feature"><strong>✓</strong> 24/7 support</div>
+			</div>
+		</div>
+
+		<div class="auth-right">
+			<div class="auth-form-wrapper">
+				<div id="authAlert" class="alert" style="display:none"></div>
+				
+				<div class="form-section">
+					<h2>Create Account</h2>
+					<div class="form-group">
+						<label for="signupEmail">Email Address</label>
+						<input type="email" id="signupEmail" placeholder="you@example.com" class="form-input">
+					</div>
+					<div class="form-group">
+						<label for="signupPassword">Password</label>
+						<input type="password" id="signupPassword" placeholder="••••••••" class="form-input">
+						<small>At least 8 characters recommended</small>
+					</div>
+					<div class="form-group">
+						<label for="signupPasswordConfirm">Confirm Password</label>
+						<input type="password" id="signupPasswordConfirm" placeholder="••••••••" class="form-input">
+					</div>
+					<button id="signupBtn" class="btn btn-primary">Create Account</button>
+				</div>
+
+				<div class="auth-toggle">
+					Already have an account? <a href="/login" class="link">Sign in</a>
+				</div>
+			</div>
+        </div>
+    </div>
+
+    <script>
+        function showAlert(msg, type='error') {
+            const el = document.getElementById('authAlert');
+            el.textContent = msg;
+            el.className = 'alert alert-' + type;
+            el.style.display = 'block';
+            console.log(`[ALERT ${type}]:`, msg);
+        }
+
+        document.getElementById('signupBtn').addEventListener('click', async () => {
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirm = document.getElementById('signupPasswordConfirm').value;
+            
+            if (!email || !password || !confirm) {
+                showAlert('All fields are required', 'error');
+                return;
+            }
+            if (!email.includes('@')) {
+                showAlert('Please enter a valid email address', 'error');
+                return;
+            }
+            if (password !== confirm) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            try {
+                console.log('[SIGNUP] Sending request for:', email);
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                console.log('[SIGNUP] Response:', response.status, data);
+                
+                if (!response.ok) {
+                    const errorMsg = data.details || data.error || 'Signup failed';
+                    throw new Error(errorMsg);
+                }
+                
+                showAlert('Account created! Redirecting to login...', 'success');
+                setTimeout(() => window.location.href = '/login', 2000);
+            } catch (e) {
+                console.error('[SIGNUP] Error:', e);
+                showAlert(e.message || 'Signup failed. Please try again.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

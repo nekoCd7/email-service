@@ -1,0 +1,84 @@
+<%- include('layout', { title: 'Domain Setup', body: `
+<div style="max-width: 900px; margin: 0 auto; padding: 20px;">
+	<div class="card">
+		<div class="card-header">Domain Setup & DNS Check</div>
+		<div class="form-stack">
+			<div class="form-group">
+				<label for="domainInput">Domain to check</label>
+				<input type="text" id="domainInput" placeholder="example.com" class="form-input">
+			</div>
+			<div>
+				<button class="btn btn-primary" id="checkDns">Check DNS Records</button>
+			</div>
+			<div id="dnsResults" style="margin-top: 16px;"></div>
+		</div>
+	</div>
+
+	<div class="card" style="margin-top: 20px;">
+		<div class="card-header">Email Protocols (Example Settings)</div>
+		<div class="form-stack">
+			<div class="dns-record" style="margin: 8px 0;">
+				<strong>SMTP:</strong> host=your-smtp-host.example port=587 (STARTTLS)
+			</div>
+			<div class="dns-record" style="margin: 8px 0;">
+				<strong>IMAP:</strong> host=your-imap-host.example port=993 (SSL)
+			</div>
+			<div class="dns-record" style="margin: 8px 0;">
+				<strong>POP3:</strong> host=your-pop3-host.example port=995 (SSL)
+			</div>
+		</div>
+	</div>
+
+	<div class="card" style="margin-top: 20px;">
+		<div class="card-header">Supabase & Email Verification</div>
+		<div class="form-stack">
+			<p><strong>Step 1: Disable Email Confirmation</strong><br>
+			To allow users to sign up and use the UI without confirming their email, disable "Confirm email" in your Supabase project settings at <strong>Project → Authentication → Settings</strong> and set "Confirm email" to OFF.</p>
+			
+			<p><strong>Step 2: Configure SMTP</strong><br>
+			Create SMTP credentials and add the following DNS records for your sending domain:</p>
+			
+			<ul style="margin-left: 20px;">
+				<li>MX Record - Points to your mail server</li>
+				<li>SPF Record - Prevents email spoofing</li>
+				<li>DKIM Record - Adds cryptographic authentication</li>
+				<li>DMARC Record - Defines email authentication policy</li>
+			</ul>
+			
+			<p><strong>Step 3: Verify Records</strong><br>
+			Use the DNS check tool above to validate that your MX, TXT, and DMARC records are correctly configured.</p>
+		</div>
+	</div>
+
+	<div id="setupNote" style="margin-top: 12px; color: #cbd5e0; font-size: 13px; text-align: center;"></div>
+</div>
+
+<script>
+	async function showResult(obj) {
+		const el = document.getElementById('dnsResults');
+		el.innerHTML = '';
+		for (const k of Object.keys(obj)) {
+			const div = document.createElement('div');
+			div.className = 'dns-record';
+			div.style.margin = '8px 0';
+			div.innerHTML = '<strong>' + k.toUpperCase() + ':</strong> <pre style="margin: 5px 0; overflow-x: auto; font-size: 12px;">' + 
+				JSON.stringify(obj[k], null, 2) + '</pre>';
+			el.appendChild(div);
+		}
+	}
+
+	document.getElementById('checkDns').addEventListener('click', async () => {
+		const domain = document.getElementById('domainInput').value.trim();
+		if (!domain) return alert('Enter a domain');
+		document.getElementById('setupNote').textContent = 'Checking DNS...';
+		try {
+			const res = await fetch(\`/api/check-dns?domain=\${encodeURIComponent(domain)}\`);
+			const data = await res.json();
+			showResult(data);
+			document.getElementById('setupNote').textContent = 'DNS check completed.';
+		} catch (e) {
+			document.getElementById('setupNote').textContent = 'Error: ' + e.message;
+		}
+	});
+</script>
+` }) %>

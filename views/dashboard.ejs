@@ -1,0 +1,45 @@
+<%- include('layout', { title: 'Dashboard', body: `
+<div class="app-container">
+  <div class="app-header">
+    <div style="font-size:20px;font-weight:700;">📧 Email Service</div>
+    <div class="user-info">
+      <div id="userEmail" style="font-size:14px"></div>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <div class="sidebar">
+      <div class="menu-item active"><a href="/setup" style="color:inherit;text-decoration:none;display:block;">⚙️ Domain Setup</a></div>
+      <div class="menu-item"><a href="/setup#imap" style="color:inherit;text-decoration:none;display:block;">🔌 IMAP/POP3</a></div>
+    </div>
+    <div class="content">
+      <div class="card">
+        <div class="card-header">Welcome</div>
+        <div id="welcomeMsg">Loading user...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = '<%= SUPABASE_URL %>';
+  const SUPABASE_ANON_KEY = '<%= SUPABASE_ANON_KEY %>';
+  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  async function init(){
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return window.location.href = '/';
+    document.getElementById('userEmail').textContent = user.email;
+    document.getElementById('welcomeMsg').textContent = `Signed in as ${user.email}`;
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  });
+
+  init();
+</script>
+` }) %>
